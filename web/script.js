@@ -27,15 +27,26 @@ function getDataFromRedis(korName, dpData) {
 }
 
 function getDataFromApi(korName, dpData) {
-    $.ajax({
-        type: "GET",
-        url:"/FirstProject_war_exploded/ApiServlet",
-        data: {
-            "name": korName,
-        }, success: function(res) { //get data from redis
-            const obj = JSON.parse(res);
+    //jsonp라는 데이터 타입 요청이 아니라 스크립트 호출 방식
+    //JSONP는 HTML의 script 요소로부터 요청되는 호출에는 보안상 정책이 적용되지 않는다는 점을 이용한 우회 방법
+    //script요소는 src를 호출한 결과를 javascript를 불러와서 포함시키는 것이 아니라 실행시키는 태그
 
-            obj.aResult[0].aItems.forEach(elem => (dpData.push(elem.name)));
+    //jsonp 응답 => callback({ key: 'value'})
+    //text/plain으로 온 응답을 js로 인식하여 바로 실행
+    const apiUrl = "https://dict.naver.com/name-to-roman/translation/?_callback=?&query=" +
+        korName + "&where=name&output=json&charset=utf-8";
+    //jsonp를 이용하기 위한 콜백 처리
+    //jQuery가 ? 기호를 인라인 함수를 호출하는 생성된 함수 이름(예:jsonp1234568416)으로 바꿔줌
+    //따라서 해당 결과값을 바로 처리하기 위한 로직은 콜백함수를 짜서 처리 가능
+
+    $.ajax({
+        url: apiUrl,
+        dataType: 'jsonp',
+        success: function(res) { //get data from redis
+            res.aResult[0].aItems.forEach(elem => {
+                dpData.push(elem.name);
+            });
+
             displayData(dpData);
         }, error: function(XMLHttpRequest, textStatus, errorThrown) {
             alert("Fail");
