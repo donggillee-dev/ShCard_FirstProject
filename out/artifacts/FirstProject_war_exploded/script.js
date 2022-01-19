@@ -27,15 +27,17 @@ function getDataFromRedis(korName, dpData) {
 }
 
 function getDataFromApi(korName, dpData) {
-    $.ajax({
-        type: "GET",
-        url:"/FirstProject_war_exploded/ApiServlet",
-        data: {
-            "name": korName,
-        }, success: function(res) { //get data from redis
-            const obj = JSON.parse(res);
+    const apiUrl = "https://dict.naver.com/name-to-roman/translation/?_callback=?&query=" +
+        korName + "&where=name&output=json&charset=utf-8"; //jsonp를 사용하기 위해 callback처리
 
-            obj.aResult[0].aItems.forEach(elem => (dpData.push(elem.name)));
+    $.ajax({
+        url: apiUrl,
+        dataType: 'jsonp',
+        success: function(res) { //get data from redis
+            res.aResult[0].aItems.forEach(elem => {
+                dpData.push(elem.name);
+            });
+
             displayData(dpData);
         }, error: function(XMLHttpRequest, textStatus, errorThrown) {
             alert("Fail");

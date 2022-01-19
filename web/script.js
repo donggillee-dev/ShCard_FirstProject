@@ -1,10 +1,19 @@
-function searchProcess() {
+async function searchProcess() {
     const korName = document.getElementById('textBox').value;
     let dpData = [];
 
     init();
-    getDataFromRedis(korName, dpData);
-    getDataFromApi(korName, dpData);
+
+    await getDataFromRedis(korName, dpData)
+        .catch((err) => {
+            alert(err);
+        });
+    await getDataFromApi(korName, dpData)
+        .catch((err) => {
+            alert(err);
+        })
+
+    displayData(dpData);
 }
 
 function init() {
@@ -18,10 +27,17 @@ function getDataFromRedis(korName, dpData) {
         data: {
             "name": korName,
         }, success: function(res) { //get data from redis
-            if(res !== "null") {
-                dpData.push(res);
-            }
+            return new Promise((resolve, reject) => {
+                if(res !== "null") {
+                    dpData.push(res);
+                }
+
+                resolve();
+            });
         }, error: function(XMLHttpRequest, textStatus, errorThrown) {
+            return new Promise(((resolve, reject) => {
+                reject(textStatus);
+            }))
         }
     })
 }
@@ -43,13 +59,16 @@ function getDataFromApi(korName, dpData) {
         url: apiUrl,
         dataType: 'jsonp',
         success: function(res) { //get data from redis
-            res.aResult[0].aItems.forEach(elem => {
-                dpData.push(elem.name);
-            });
-
-            displayData(dpData);
+            return new Promise((resolve, reject) => {
+                res.aResult[0].aItems.forEach(elem => {
+                    dpData.push(elem.name);
+                    resolve();
+                });
+            })
         }, error: function(XMLHttpRequest, textStatus, errorThrown) {
-            alert("Fail");
+            return new Promise(((resolve, reject) => {
+                reject(textStatus);
+            }))
         }
     })
 }
